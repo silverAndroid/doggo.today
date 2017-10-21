@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
-
+const request = require('request');
 const app = express();
 const PAGE_ACCESS_TOKEN = 'EAABq08RmTRUBAKG5JwtXGbqjPpQm2rXqdYbaCLmqVb9Njhj24mIgKkT0ZCWlZBMERI7NeD0sOd3ZAsvPftyx58hbQvUxaef1CotXsZCFJLgoZC5ZB7XtrYiOMxJX9RdZBgqqKWYcFs26VzuG4JpSctB9boKIjDNfdWhPjst0KxRHDvy4ArOagfs'
 
@@ -10,7 +10,6 @@ app.use(bodyParser.json());
 if (process.env.NODE_ENV !== 'test') {
     app.use(logger('dev'));
 }
-
 
 // Creates the endpoint for our webhook
 app.post('/webhook', (req, res) => {
@@ -35,7 +34,7 @@ app.post('/webhook', (req, res) => {
 	  // Check if the event is a message or postback and
 	  // pass the event to the appropriate handler function
 	  if (webhook_event.message) {
-	    handleMessage(sender_psid, webhook_event.message);        
+	    handleMessage(sender_psid, webhook_event.message);
 	  } else if (webhook_event.postback) {
 	    handlePostback(sender_psid, webhook_event.postback);
 	  }
@@ -52,7 +51,7 @@ app.post('/webhook', (req, res) => {
 
 app.get('/webhook', (req, res) => {
   // Your verify token. Should be a random string.
-  let VERIFY_TOKEN = "lazer_cat"
+  let VERIFY_TOKEN = "lazer_cat";
 
   // Parse the query params
   let mode = req.query['hub.mode'];
@@ -80,14 +79,14 @@ function handleMessage(sender_psid, received_message) {
 	let response;
 
 	// Check if the message contains text
-	if (received_message.text) {    
+	if (received_message.text) {
 
 	// Create the payload for a basic text message
 	response = {
-	  "text": `You sent the message: "${received_message.text}". Now send me an image!`
+	  "text": `You are a potato`
 	}
-}  
-  
+}
+
   // Sends the response message
   callSendAPI(sender_psid, response);
 }
@@ -99,14 +98,13 @@ function handlePostback(sender_psid, received_postback) {
 
 // Sends response messages via the Send API
 function callSendAPI(sender_psid, response) {
-<<<<<<< HEAD
   // Construct the message body
-  let message = {
+  let request_body = {
     "recipient": {
       "id": sender_psid
     },
     "message": response
-  }
+  };
    // Send the HTTP request to the Messenger Platform
   request({
     "uri": "https://graph.facebook.com/v2.6/me/messages",
@@ -119,10 +117,7 @@ function callSendAPI(sender_psid, response) {
     } else {
       console.error("Unable to send message:" + err);
     }
-  }); 
-=======
-
->>>>>>> 9608ad4274663dfbf79661de2a1f6a602568e2fd
+  });
 }
 
 app.listen(3000);
