@@ -112,13 +112,15 @@ function verifyAnswer(message, user) {
         }
     } else {
         const question = user.questions[user.question];
-        if (question.type === QuestionTypes.INPUT) {
-            user.question += 1;
-            user.answers.push({text: message});
-        } else if (question.type === QuestionTypes.SINGLE) {
-            if (user.questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
+        if (user.question < user.questions.length) {
+            if (question.type === QuestionTypes.INPUT) {
                 user.question += 1;
                 user.answers.push({text: message});
+            } else if (question.type === QuestionTypes.SINGLE) {
+                if (user.questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
+                    user.question += 1;
+                    user.answers.push({text: message});
+                }
             }
         }
     }
@@ -127,11 +129,12 @@ function verifyAnswer(message, user) {
 }
 
 function verifyImages(images, user) {
-    // Handle case where user.questions is undefined
-    const question = user.questions[user.question];
-    if (question.type === QuestionTypes.PICTURE) {
-        user.question += 1;
-        user.answers.push({images}); // images is a url
+    if (!!user.questions) {
+        const question = user.questions[user.question];
+        if (question.type === QuestionTypes.PICTURE) {
+            user.question += 1;
+            user.answers.push({images}); // images is a url
+        }
     }
 
     return user;
@@ -155,7 +158,7 @@ function sendQuestion(user, resolve) {
         } else {
             const sentence = user.questions === adoptingQuestions ? END_OF_ADOPTING_STR : END_OF_GIVING_STR;
             resolve({question: sentence});
-        }
+        } // TODO: Add option to restart from beginning
     }
 }
 
