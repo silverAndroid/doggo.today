@@ -14,9 +14,7 @@ const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
 bot.on('message', async (message) => {
     const { sender, text, images, location } = message;
     if (text) {
-        console.log(text);
         const {question, answers} = await questionHandler.onMessageReceived(text, sender.id);
-        console.log(question);
         const buttons = new messengerBot.Buttons();
         answers.forEach(answer => {
             buttons.add({text: answer, data: answer});
@@ -37,16 +35,21 @@ bot.on('message', async (message) => {
 });
 
 bot.on('postback', async (event, { sender, text, images, location }, data) => {
-    console.log(data);
+    let buttons;
     const {question, answers} = await questionHandler.onMessageReceived(data, sender.id);
-    console.log(question);
-    const buttons = new messengerBot.Buttons();
-    answers.forEach(answer => {
-        buttons.add({text: answer, data: answer});
-    });
+    if (!(!answers)) {
+        buttons = new messengerBot.Buttons();
+        answers.forEach(answer => {
+            buttons.add({text: answer, data: answer});
+        });
+    }
 
+    const element = {text: question};
+    if (!(!buttons)) {
+        element.buttons = buttons;
+    }
     const out = new messengerBot.Elements();
-    out.add({text: question, buttons}); // add a card
+    out.add(element); // add a card
     await bot.send(sender.id, out);
 });
 
