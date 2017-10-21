@@ -53,3 +53,7 @@ module.exports.getAllDoggos = (callback) => {
         callback(err, doggos)
     })
 }
+
+module.exports.getAvailableDoggos = (callback) => {
+	dog.find({dogState: 'AVAILABLE'}, callback)
+}

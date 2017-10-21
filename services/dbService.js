@@ -29,6 +29,10 @@ module.exports.GetAllDoggos = (done) => {
 	return DogModel.getAllDoggos(done)
 }
 
+module.exports.GetAvailableDoggos = (done) => {
+	return DogModel.getAvailableDoggos(done)
+}
+
 module.exports.RegisterDoggo = (owner_id, name, breed, age, size, personality, dogState = 'AVAILABLE', done) => {
 	DogModel.register(name, breed, age, size, personality, dogState, (err, doggo) => {
 		if (err)
