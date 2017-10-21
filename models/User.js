@@ -1,42 +1,44 @@
 var mongoose = require('mongoose')
-
-mongoose.connect('mongodb://localhost/doggo')
-
+var Schema = mongoose.Schema
+mongoose.Promise = global.Promise
 var db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
-mongoose.Promise = global.Promise
 
-const MODEL_NAME = 'User'
-
-class UserModel {
-
-	createModel() {
-		if (mongoose.models[MODEL_NAME]) {
-      		return mongoose.model(MODEL_NAME)
-    	}
-    	return mongoose.model(MODEL_NAME, this.createSchema())
+var userSchema = new Schema({
+	id: Schema.Types.ObjectId,
+    dogs: {
+        type: [Schema.Types.ObjectId]
+    },
+	facebook_id: {
+        type: String,
+		required: true
+    },
+	desiredDogType: {
+		type: String
+	},
+	desiredDogSize: {
+		type: String
+	},
+	created: {
+		type: Date,
+		default: Date.now
 	}
+})
 
-	createSchema() {
-		var schema = new mongoose.Schema({
-			id: { type: String, required: true, unique: true },
-			external_id: { type: String, required: true, index: true },
-			desiredDogType: { type: String, required: true },
-			desiredDogSize: { type: String, required: false },
-			created: { type: Date, default: Date.now },
-		})
+var user = mongoose.model('users', userSchema)
 
-		schema.statics.register = async (facebook_id, name, breed, age, size, personality) => {
-			return this.create({facebook_id, name, breed, age, size, personality})
-		}
-
-		schema.statics.findUserByExternalId = async (external_id) => {
-      		return this.find({external_id}).exec()
-    	}
-
-		return schema
-	}
-
+module.exports.register = (facebook_id, callback) => {
+    user.create({facebook_id}, callback)
 }
 
-module.exports = UserModel
+module.exports.findUser = (id, callback) => {
+    user.findOne({id}, (err, user) => {
+        callback(err, user)
+    })
+}
+
+module.exports.findAllUser = (callback) => {
+    user.find({}, (err, users) => {
+        callback(err, users)
+    })
+}
