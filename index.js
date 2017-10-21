@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const logger = require('morgan');
 
 const app = express();
-const PAGE_ACCESS_TOKEN = EAABq08RmTRUBAKG5JwtXGbqjPpQm2rXqdYbaCLmqVb9Njhj24mIgKkT0ZCWlZBMERI7NeD0sOd3ZAsvPftyx58hbQvUxaef1CotXsZCFJLgoZC5ZB7XtrYiOMxJX9RdZBgqqKWYcFs26VzuG4JpSctB9boKIjDNfdWhPjst0KxRHDvy4ArOagfs;
+const PAGE_ACCESS_TOKEN = 'EAABq08RmTRUBAKG5JwtXGbqjPpQm2rXqdYbaCLmqVb9Njhj24mIgKkT0ZCWlZBMERI7NeD0sOd3ZAsvPftyx58hbQvUxaef1CotXsZCFJLgoZC5ZB7XtrYiOMxJX9RdZBgqqKWYcFs26VzuG4JpSctB9boKIjDNfdWhPjst0KxRHDvy4ArOagfs'
 
 app.use(bodyParser.json());
 
@@ -99,6 +99,7 @@ function handlePostback(sender_psid, received_postback) {
 
 // Sends response messages via the Send API
 function callSendAPI(sender_psid, response) {
+<<<<<<< HEAD
   // Construct the message body
   let message = {
     "recipient": {
@@ -119,6 +120,9 @@ function callSendAPI(sender_psid, response) {
       console.error("Unable to send message:" + err);
     }
   }); 
+=======
+
+>>>>>>> 9608ad4274663dfbf79661de2a1f6a602568e2fd
 }
 
 app.listen(3000);
