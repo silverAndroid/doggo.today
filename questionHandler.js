@@ -45,7 +45,7 @@ const questions = [
 module.exports.onMessageReceived = (message, userID) => new Promise((resolve, reject) => {
     const bot = context.getOrCreate(userID);
     if (!bot.isSet()) {
-        getQuestion(userID, resolve);
+        getQuestionOne(userID, resolve);
     }
 
     bot.match(message, (err, match, cb) => {
@@ -57,19 +57,46 @@ module.exports.onMessageReceived = (message, userID) => new Promise((resolve, re
     });
 });
 
-function getQuestion(userID, resolve, questionNumber = 0) {
-    console.log(userID);
+function getQuestionOne(userID, resolve) {
+    const bot = context.getOrCreate(userID);
+    bot.set(/.*/, () => {
+        console.log('Question 1');
+       getQuestionTwo(userID, resolve);
+    });
+    const question = questions[0];
+    if (question.type === QuestionTypes.RANDOM) {
+        question.answers = reduceArray(question.answers, question.maximum);
+    }
+
+    resolve(question);
+}
+
+function getQuestionTwo(userID, resolve) {
+    const bot = context.getOrCreate(userID);
+    bot.set((text, cb) => {
+        // cb(null, questions[0].answers.some(answer => answer === text))
+        cb(null, true);
+    }, () => {
+        console.log('Test complete');
+    });
+
+    const question = questions[1];
+    resolve(question);
+}
+
+/*function getQuestion(userID, resolve, questionNumber = 0) {
     const bot = context.getOrCreate(userID);
     if (questionNumber < questions.length) {
         bot.set((text, cb) => {
-            console.log(questionNumber);
-            if (questionNumber === 0) cb(true);
+            // console.log(questionNumber);
+            if (questionNumber === 0) cb(null, true);
             else {
                 // Checks if there is an answer in question <questionNumber> that the user sent
-                cb(questions[questionNumber - 1].answers.some(answer => answer === text));
+                cb(null, questions[questionNumber - 1].answers.some(answer => answer === text));
             }
         }, () => {
             const nextQuestion = questionNumber + 1;
+            console.log(`Sending question ${nextQuestion}`);
             getQuestion(userID, resolve, nextQuestion);
         });
         const question = questions[questionNumber];
@@ -81,7 +108,7 @@ function getQuestion(userID, resolve, questionNumber = 0) {
     } else {
         resolve('Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.')
     }
-}
+}*/
 
 function reduceArray(array, maximum) {
     const reduced = [];
