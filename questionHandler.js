@@ -2,12 +2,50 @@ const fs = require('fs');
 
 const userMap = new Map();
 const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
-const END_OF_QUESTIONS_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.';
+const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.';
+const END_OF_GIVING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if someone is interested in taking your dog. Please keep in mind that potential adopters will be able to see your dog\'s profile.';
 const QuestionTypes = {
     SINGLE: 0,
     RANDOM: 1,
+    INPUT: 2,
+    PICTURE: 3,
 };
-const questions = [
+const initialQuestion = {
+    question: 'Are you putting your dog up for adoption or adopting a dog?',
+    answers: [
+        // TODO: Pick phrase that doesn't get cut off
+        'Dog for adoption',
+        'Adopting a dog'
+    ],
+    type: QuestionTypes.SINGLE,
+};
+const givingAwayQuestions = [
+    {
+        question: 'I have 5 questions for you. \n1) What breed is your dog?',
+        type: QuestionTypes.INPUT,
+    },
+    {
+        question: '2) How old is your dog?',
+        type: QuestionTypes.INPUT,
+    },
+    {
+        question: '3) Do you have a big or small dog?',
+        answers: [
+            'I have a big dog',
+            'I have a small dog',
+        ],
+        type: QuestionTypes.SINGLE,
+    },
+    {
+        question: '4) How would you describe your dog? (Independent, active)',
+        type: QuestionTypes.INPUT,
+    },
+    {
+        question: '5) Please upload a picture of your dog.',
+        type: QuestionTypes.PICTURE
+    }
+];
+const adoptingQuestions = [
     {
         question: 'What dog breed do you like?',
         answers: breeds,
@@ -24,10 +62,9 @@ const questions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: 'What size dog would you like?',
+        question: 'Would you like a small dog or a large dog?',
         answers: [
             'Small',
-            'Medium',
             'Large'
         ],
         type: QuestionTypes.SINGLE,
@@ -51,6 +88,12 @@ module.exports.onMessageReceived = (message, userID) => new Promise((resolve) =>
     sendQuestion(user, resolve);
 });
 
+module.exports.onImagesReceived = (images, userID) => new Promise((resolve) => {
+    let user = getUser(userID);
+    user = verifyImages(images, user);
+    sendQuestion(user, resolve);
+});
+
 function getUser(userID) {
     let user = {answers: [], question: 0, id: userID};
     if (userMap.has(userID)) {
@@ -61,26 +104,58 @@ function getUser(userID) {
 
 function verifyAnswer(message, user) {
     message = message.toLowerCase();
-    if (questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
-        user.question += 1;
-        user.answers.push(message);
+    if (!user.questions) {
+        if (message === initialQuestion.answers[0].toLowerCase()) {
+            user.questions = givingAwayQuestions;
+        } else if (message === initialQuestion.answers[1].toLowerCase()) {
+            user.questions = adoptingQuestions;
+        }
+    } else {
+        const question = user.questions[user.question];
+        if (question.type === QuestionTypes.INPUT) {
+            user.question += 1;
+            user.answers.push({text: message});
+        } else if (question.type === QuestionTypes.SINGLE) {
+            if (user.questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
+                user.question += 1;
+                user.answers.push({text: message});
+            }
+        }
     }
+
+    return user;
+}
+
+function verifyImages(images, user) {
+    // Handle case where user.questions is undefined
+    const question = user.questions[user.question];
+    if (question.type === QuestionTypes.PICTURE) {
+        user.question += 1;
+        user.answers.push({images}); // images is a url
+    }
+
     return user;
 }
 
 function sendQuestion(user, resolve) {
     // Check if new question is past the limit
     const questionNumber = user.question;
-    if (questionNumber < questions.length) {
-        const question = questions[questionNumber];
-        if (question.type === QuestionTypes.RANDOM) {
-            question.answers = reduceArray(question.answers, question.maximum);
-        }
-
-        userMap.set(user.id, user);
+    const question = !user.questions ? initialQuestion : user.questions[questionNumber];
+    if (!user.questions) {
         resolve(question);
     } else {
-        resolve({question: END_OF_QUESTIONS_STR});
+        if (questionNumber < user.questions.length) {
+            if (question.type === QuestionTypes.RANDOM) {
+                question.answers = reduceArray(question.answers, question.maximum);
+            }
+            console.log(questionNumber, question);
+
+            userMap.set(user.id, user);
+            resolve(question);
+        } else {
+            const sentence = user.questions === adoptingQuestions ? END_OF_ADOPTING_STR : END_OF_GIVING_STR;
+            resolve({question: sentence});
+        }
     }
 }
 
