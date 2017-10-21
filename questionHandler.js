@@ -25,14 +25,19 @@ const givingAwayQuestions = [
         type: QuestionTypes.INPUT,
     },
     {
-        question: '2) How old is your dog?',
-        type: QuestionTypes.INPUT,
+        question: '2) Is your dog a puppy, an adult, or is he/she elderly?',
+        type: QuestionTypes.SINGLE,
+        answers: [
+            'Puppy',
+            'Adult',
+            'Elderly',
+        ],
     },
     {
-        question: '3) Do you have a big or small dog?',
+        question: '3) Do you have a small or large dog?',
         answers: [
-            'I have a big dog',
-            'I have a small dog',
+            'Small',
+            'Large',
         ],
         type: QuestionTypes.SINGLE,
     },
@@ -47,13 +52,11 @@ const givingAwayQuestions = [
 ];
 const adoptingQuestions = [
     {
-        question: 'What dog breed do you like?',
-        answers: breeds,
-        type: QuestionTypes.RANDOM,
-        maximum: 3,
+        question: 'I have 4 questions for you. \n1) What dog breed do you like?',
+        type: QuestionTypes.INPUT,
     },
     {
-        question: 'How old would you like your dog to be?',
+        question: '2) How old would you like your dog to be?',
         answers: [
             'Puppy',
             'Adult',
@@ -62,7 +65,7 @@ const adoptingQuestions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: 'Would you like a small dog or a large dog?',
+        question: '3) Would you like a small dog or a large dog?',
         answers: [
             'Small',
             'Large'
@@ -70,7 +73,7 @@ const adoptingQuestions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: 'What kind of dog are you looking for?',
+        question: '4) What kind of dog are you looking for?',
         answers: [
             'Playful',
             'Loves being outdoors',
@@ -116,7 +119,7 @@ function verifyAnswer(message, user) {
             if (question.type === QuestionTypes.INPUT) {
                 user.question += 1;
                 user.answers.push({text: message});
-            } else if (question.type === QuestionTypes.SINGLE) {
+            } else if (question.type === QuestionTypes.SINGLE || question.type === QuestionTypes.RANDOM) {
                 if (user.questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
                     user.question += 1;
                     user.answers.push({text: message});
@@ -160,6 +163,28 @@ function sendQuestion(user, resolve) {
             resolve({question: sentence});
         } // TODO: Add option to restart from beginning
     }
+}
+
+function updateMatchings(matchingUser) {
+    const scores = [];
+    for (let [id, user] of userMap) {
+        if (matchingUser.id === id) {
+            continue;
+        }
+
+        const length = user.answers.length > matchingUser.answers.length ? matchingUser.answers.length : user.answers.length;
+        let score = 0;
+        for (let i = 0; i < length; i++) {
+            if (matchingUser.answers[i] === user.answers[i]) {
+                score += 1;
+            }
+        }
+        scores.push({id, score});
+    }
+
+    scores.sort((a, b) => b.score - a.score);
+    matchingUser.scores = scores;
+    return scores;
 }
 
 function reduceArray(array, maximum) {
