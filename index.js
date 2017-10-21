@@ -8,14 +8,18 @@ const app = express();
 const questionHandler = require('./questionHandler');
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 
+const controller = require('./controllers/controller');
+
 const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
 
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/doggo');
 
 bot.on('message', async (message) => {
-    const { sender, text, images, location } = message;
+    const {sender, text, images, location} = message;
     if (text) {
-        const {question, answers} = await questionHandler.onMessageReceived(text, sender.id);
-        await sendQuestion(question, answers, sender);
+        const {question, answers, elements} = await questionHandler.onMessageReceived(text, sender.id);
+        await sendQuestion(question, answers, sender, elements);
     }
 
     if (images) {
@@ -29,23 +33,17 @@ bot.on('message', async (message) => {
     }
 });
 
-bot.on('postback', async (event, { sender, text, images, location }, data) => {
-    const {question, answers} = await questionHandler.onMessageReceived(data, sender.id);
-    const buttons = new messengerBot.Buttons();
-    if (!!answers) {
-        for (let answer of answers) {
-            buttons.add({text: answer, data: answer});
-        }
-    }
-
-    const out = new messengerBot.Elements();
-    out.add({text: question, buttons}); // add a card
-    await bot.send(sender.id, out);
+bot.on('postback', async (event, {sender, text, images, location}, data) => {
+    const {question, answers, elements} = await questionHandler.onMessageReceived(data, sender.id);
+    await sendQuestion(question, answers, sender, elements);
 });
 
 bot.on('invalid-postback', message => console.error(message));
 
 app.use('/facebook', bot.router());
+
+//for testing
+app.get('/getAllDoggos', controller.findAllDoggos);
 
 if (process.env.NODE_ENV !== 'test') {
     app.use(logger('dev'));
@@ -53,8 +51,41 @@ if (process.env.NODE_ENV !== 'test') {
 
 app.listen(3000);
 
-async function sendQuestion(question, answers, sender) {
-    const buttons = new messengerBot.Buttons();
+async function sendQuestion(question, answers, sender, elements) {
+    let buttons;
+    if (!elements) {
+        if (!(!answers)) {
+            buttons = new messengerBot.Buttons();
+            answers.forEach(answer => {
+                buttons.add({text: answer, data: answer});
+            });
+        }
+
+        const element = {text: question};
+        if (!(!buttons)) {
+            element.buttons = buttons;
+        }
+        const out = new messengerBot.Elements();
+        out.add(element); // add a card
+        await bot.send(sender.id, out);
+    } else {
+        console.log(elements);
+        buttons = new messengerBot.Buttons();
+        for (let element of elements._elements) {
+            console.log("element: " + element.text);
+            buttons.add({text: element.text, data: element.text});
+        }
+
+        const element = {text: "choose your doggo:"};
+        const out = new messengerBot.Elements();
+        if (!(!buttons)) {
+            element.buttons = buttons;
+        }
+        out.add(element);
+        await bot.send(sender.id, elements);
+        await bot.send(sender.id, out)
+    }
+    /*const buttons = new messengerBot.Buttons();
     if (!!answers) {
         for (let answer of answers) {
             buttons.add({text: answer, data: answer});
@@ -63,5 +94,5 @@ async function sendQuestion(question, answers, sender) {
 
     const out = new messengerBot.Elements();
     out.add({text: question, buttons}); // add a card
-    await bot.send(sender.id, out);
+    await bot.send(sender.id, out);*/
 }

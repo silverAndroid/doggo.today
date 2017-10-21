@@ -2,8 +2,12 @@ const fs = require('fs');
 
 const userMap = new Map();
 const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
+const DogModel = require('./models/Dog');
+const Dog = new DogModel().createModel();
+const messengerBot = require('facebook-messenger-bot');
 const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.';
 const END_OF_GIVING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if someone is interested in taking your dog. Please keep in mind that potential adopters will be able to see your dog\'s profile.';
+
 const QuestionTypes = {
     SINGLE: 0,
     RANDOM: 1,
@@ -159,11 +163,50 @@ function sendQuestion(user, resolve) {
             userMap.set(user.id, user);
             resolve(question);
         } else {
+            const doggos = returnPotentialDoggos(user.id);
+            if (doggos.length > 0) {
+                return resolve({elements: doggos});
+            }
             const sentence = user.questions === adoptingQuestions ? END_OF_ADOPTING_STR : END_OF_GIVING_STR;
             resolve({question: sentence});
         } // TODO: Add option to restart from beginning
     }
 }
+
+const returnPotentialDoggos = (userID) => {
+
+    // await Dog.register("fbid", "Dog 1", "breed", "age", "size", "personality", "AVAILABLE")
+    // await Dog.register("fbid", "Dog 2", "breed", "age", "size", "personality", "AVAILABLE")
+    // //if doggos found
+    // potentialDoggos = await Dog.findAvailableDoggos()
+
+
+    const out = new messengerBot.Elements();
+
+    const potentialDoggos = [{
+        external_id: "fbid", 
+        name: "Dog 1", 
+        breed: "doggo bread", 
+        age: "puppy", 
+        size: "small", 
+        personality: "fluffy", 
+        availability: "AVAILABLE"
+    }, {
+        external_id: "fbid", 
+        name: "Dog 2", 
+        breed: "doggo bread", 
+        age: "puppy", 
+        size: "small", 
+        personality: "fluffy", 
+        availability: "AVAILABLE"
+    }];
+
+    for (let {name} of potentialDoggos){
+         out.add({text: name, image: "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/00100dPORTRAIT_00100_BURST20170914121422905_C.width-1000.jpg"});
+    }
+    console.log(out);
+    return out;
+};
 
 function updateMatchings(matchingUser) {
     const scores = [];
