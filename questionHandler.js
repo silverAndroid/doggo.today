@@ -42,13 +42,16 @@ const questions = [
 ];
 
 module.exports.onMessageReceived = (message, userID) => new Promise((resolve, reject) => {
-    getQuestion(userID, resolve);
+    getQuestion(message, userID, resolve);
 });
 
-function getQuestion(userID, resolve) {
+function getQuestion(message, userID, resolve) {
     let questionNumber = 0;
     if (userMap.has(userID)) {
         questionNumber = userMap.get(userID);
+        if (questions[questionNumber].answers.some(answer => message === answer)) {
+            questionNumber += 1;
+        }
     } else {
         userMap.set(userID, 0);
     }
@@ -59,7 +62,7 @@ function getQuestion(userID, resolve) {
             question.answers = reduceArray(question.answers, question.maximum);
         }
 
-        userMap.set(userID, questionNumber + 1);
+        userMap.set(userID, questionNumber);
         resolve(question);
     } else {
         resolve({question: 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.'});
