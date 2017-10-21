@@ -1,52 +1,54 @@
 var mongoose = require('mongoose')
-
-mongoose.connect('mongodb://localhost/doggo')
-
+var Schema = mongoose.Schema
+mongoose.Promise = global.Promise
 var db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
-mongoose.Promise = global.Promise
 
-const MODEL_NAME = 'Dog'
-
-class DogSchema {
-
-	createModel() {
-		if (mongoose.models[MODEL_NAME]) {
-      		return mongoose.model(MODEL_NAME)
-    	}
-    	return mongoose.model(MODEL_NAME, this.createSchema())
+var dogSchema = new Schema({
+	id: Schema.Types.ObjectId,
+    owner: {
+        type: Schema.Types.ObjectId,
+        unique: true,
+        require: [true, 'Must Enter a the dog owner']
+    },
+    name: {
+        type: String,
+        require: [true, 'Must Enter a name']
+    },
+    breed: {
+        type: String
+    },
+	age: {
+        type: String
+    },
+	size: {
+		type: String
+	},
+	personality: {
+		type: String
+	},
+	dogState: {
+		type: String,
+		enum: ['ADOPTED', 'FOSTERED', 'AVAILABLE']
 	}
+})
 
-	createSchema() {
-		var schema = new mongoose.Schema({
-			external_id: String,
-			name: String,
-			breed: String,
-			age: String,
-			size: String,
-			personality: String,
-			dogState: { type: String, enum: ['ADOPTED', 'FOSTERED', 'AVAILABLE'] }
-		})
+var dog = mongoose.model('dogs', dogSchema)
 
-		schema.statics.register = async (facebook_id, name, breed, age, size, personality, dogState) => {
-			return this.create({facebook_id, name, breed, age, size, personality})
-		}
-
-		schema.statics.findDoggo = async (facebook_id) => {
-		    return this.find({facebook_id}).exec()
-		}
-
-		schema.statics.findAvailableDoggos = async () => {
-			return this.find({dogState: 'AVAILABLE'}).exec()
-		}
-
-		schema.statics.findAll = async function () {
-			return this.find({}).exec()
-		}
-
-		return schema
-	}
-
+module.exports.register = (owner, name, breed, age, size, personality, dogState) => {
+    dog.create({owner, name, breed, name, age, size, personality, dogState}, (err, doggos) => {
+        callback(err, doggos)
+    })
 }
 
-module.exports = DogSchema
+module.exports.findDog = (id, callback) => {
+    dog.findOne({id}, (err, doggo) => {
+        callback(err, doggo)
+    })
+}
+
+module.exports.findAllDoggos = (callback) => {
+    dog.find({}, (err, doggos) => {
+        callback(err, doggos)
+    })
+}
