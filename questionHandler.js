@@ -2,8 +2,6 @@ const fs = require('fs');
 
 const userMap = new Map();
 const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
-const DogModel = require('./models/Dog');
-const Dog = new DogModel().createModel();
 const messengerBot = require('facebook-messenger-bot');
 const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.';
 const END_OF_GIVING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if someone is interested in taking your dog. Please keep in mind that potential adopters will be able to see your dog\'s profile.';
@@ -163,11 +161,12 @@ function sendQuestion(user, resolve) {
             userMap.set(user.id, user);
             resolve(question);
         } else {
+            const isAdopting = user.questions === adoptingQuestions;
             const doggos = returnPotentialDoggos(user.id);
-            if (doggos.length > 0) {
+            if (isAdopting && doggos.length > 0) {
                 return resolve({elements: doggos});
             }
-            const sentence = user.questions === adoptingQuestions ? END_OF_ADOPTING_STR : END_OF_GIVING_STR;
+            const sentence = isAdopting ? END_OF_ADOPTING_STR : END_OF_GIVING_STR;
             resolve({question: sentence});
         } // TODO: Add option to restart from beginning
     }

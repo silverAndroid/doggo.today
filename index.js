@@ -12,9 +12,6 @@ const controller = require('./controllers/controller');
 
 const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
 
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/doggo');
-
 bot.on('message', async (message) => {
     const {sender, text, images, location} = message;
     if (text) {
