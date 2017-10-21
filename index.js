@@ -12,9 +12,6 @@ const controller = require('./controllers/controller');
 
 const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
 
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/doggo');
-
 bot.on('message', async (message) => {
     const {sender, text, images, location} = message;
     if (text) {
@@ -85,14 +82,4 @@ async function sendQuestion(question, answers, sender, elements) {
         await bot.send(sender.id, elements);
         await bot.send(sender.id, out)
     }
-    /*const buttons = new messengerBot.Buttons();
-    if (!!answers) {
-        for (let answer of answers) {
-            buttons.add({text: answer, data: answer});
-        }
-    }
-
-    const out = new messengerBot.Elements();
-    out.add({text: question, buttons}); // add a card
-    await bot.send(sender.id, out);*/
 }
