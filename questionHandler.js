@@ -1,7 +1,8 @@
 const fs = require('fs');
 
-const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
 const userMap = new Map();
+const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
+const END_OF_QUESTIONS_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.';
 const QuestionTypes = {
     SINGLE: 0,
     RANDOM: 1,
@@ -37,35 +38,49 @@ const questions = [
             'Playful',
             'Loves being outdoors',
             'Fluffy'
-        ]
+        ],
+        type: QuestionTypes.SINGLE,
     }
 ];
 
-module.exports.onMessageReceived = (message, userID) => new Promise((resolve, reject) => {
-    getQuestion(message, userID, resolve);
+module.exports.onMessageReceived = (message, userID) => new Promise((resolve) => {
+    // Get user if exists in user map
+    let user = getUser(userID);
+    // Increment question if answer is a given one
+    user = verifyAnswer(message, user);
+    sendQuestion(user, resolve);
 });
 
-function getQuestion(message, userID, resolve) {
-    let questionNumber = 0;
+function getUser(userID) {
+    let user = {answers: [], question: 0, id: userID};
     if (userMap.has(userID)) {
-        questionNumber = userMap.get(userID);
-        if (questions[questionNumber].answers.some(answer => message === answer)) {
-            questionNumber += 1;
-        }
-    } else {
-        userMap.set(userID, 0);
+        user = userMap.get(userID);
     }
+    return user;
+}
 
+function verifyAnswer(message, user) {
+    message = message.toLowerCase();
+    if (questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
+        user.question += 1;
+        user.answers.push(message);
+    }
+    return user;
+}
+
+function sendQuestion(user, resolve) {
+    // Check if new question is past the limit
+    const questionNumber = user.question;
     if (questionNumber < questions.length) {
         const question = questions[questionNumber];
         if (question.type === QuestionTypes.RANDOM) {
             question.answers = reduceArray(question.answers, question.maximum);
         }
 
-        userMap.set(userID, questionNumber);
+        userMap.set(user.id, user);
         resolve(question);
     } else {
-        resolve({question: 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.'});
+        resolve({question: END_OF_QUESTIONS_STR});
     }
 }
 
