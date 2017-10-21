@@ -3,15 +3,15 @@ const MODEL_NAME = 'Dog'
 
 class DogSchema {
 
-	createModel = () => {
+	createModel() {
 		if (mongoose.models[MODEL_NAME]) {
       		return mongoose.model(MODEL_NAME)
     	}
     	return mongoose.model(MODEL_NAME, this.createSchema())
 	}
 
-	createSchema = () => {
-		var schema = new Schema({
+	createSchema() {
+		var schema = new mongoose.Schema({
 			external_id: String,
 			name: String,
 			breed: String,

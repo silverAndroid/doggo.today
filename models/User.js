@@ -3,14 +3,14 @@ const MODEL_NAME = 'User'
 
 class UserModel {
 
-	createModel = () => {
+	createModel() {
 		if (mongoose.models[MODEL_NAME]) {
       		return mongoose.model(MODEL_NAME)
     	}
     	return mongoose.model(MODEL_NAME, this.createSchema())
 	}
 
-	createSchema= () => {
+	createSchema() {
 		var schema = new mongoose.Schema({
 			id: { type: String, required: true, unique: true },
 			external_id: { type: String, required: true, index: true },
