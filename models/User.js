@@ -11,6 +11,7 @@ var userSchema = new Schema({
     },
 	facebook_id: {
         type: String,
+		unique: true,
 		required: true
     },
 	desiredDogType: {
@@ -41,4 +42,12 @@ module.exports.findAllUser = (callback) => {
     user.find({}, (err, users) => {
         callback(err, users)
     })
+}
+
+module.exports.linkDoggo = (facebook_id, doggoId, callback) => {
+	user.findOneAndUpdate({facebook_id},  {$push: {"dogs": doggoId}}, callback)
+}
+
+module.exports.deleteDoggo = (facebook_id, doggoId, callback) => {
+	user.findOneAndUpdate({facebook_id},  {$pull: {"dogs": doggoId}}, callback)
 }
