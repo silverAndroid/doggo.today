@@ -10,17 +10,15 @@ const PAGE_ACCESS_TOKEN = 'EAABq08RmTRUBAKG5JwtXGbqjPpQm2rXqdYbaCLmqVb9Njhj24mIg
 const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
 
 
-bot.on('message', async message => {
-    const {sender} = message;
+bot.on('message', async ({ sender, text, images, location }) => {
     await sender.fetch('first_name,profile_pic', true);
-    const {text, images, location} = message;
 
     if (text) {
         console.log(text);
         const {question, answers} = await questionHandler.onMessageReceived(text, sender.id);
         buttons = new messengerBot.Buttons();
         answers.forEach(answer => {
-            buttons.add({text: answer, data: "hi"});
+            buttons.add({text: answer, data: answer});
         });
 
         out = new messengerBot.Elements();
@@ -36,6 +34,12 @@ bot.on('message', async message => {
         console.log(location)
     }
 });
+
+bot.on('postback', async (event, { sender, text, images, location }, data) => {
+    console.log(event, sender, text, images, location, data);
+});
+
+bot.on('invalid-postback', message => console.error(message));
 
 app.use('/facebook', bot.router());
 

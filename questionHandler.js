@@ -8,7 +8,7 @@ const QuestionTypes = {
 };
 const questions = [
     {
-        question: 'What dog breed would you like?',
+        question: 'What dog breed do you like?',
         answers: breeds,
         type: QuestionTypes.RANDOM,
         maximum: 3,
@@ -52,17 +52,22 @@ module.exports.onMessageReceived = (message, userID) => new Promise((resolve, re
         if (!err) {
             cb(userID, match);
         } else {
-            reject(err);
+            console.error(err);
         }
     });
 });
 
 function getQuestion(userID, resolve, questionNumber = 0) {
+    console.log(userID);
     const bot = context.getOrCreate(userID);
     if (questionNumber < questions.length) {
         bot.set((text, cb) => {
-            // Checks if there is an answer in question <questionNumber> that the user sent
-            cb(questionNumber === 0 && questions[questionNumber].answers.some(answer => answer === text));
+            console.log(questionNumber);
+            if (questionNumber === 0) cb(true);
+            else {
+                // Checks if there is an answer in question <questionNumber> that the user sent
+                cb(questions[questionNumber - 1].answers.some(answer => answer === text));
+            }
         }, () => {
             const nextQuestion = questionNumber + 1;
             getQuestion(userID, resolve, nextQuestion);
@@ -70,10 +75,9 @@ function getQuestion(userID, resolve, questionNumber = 0) {
         const question = questions[questionNumber];
         if (question.type === QuestionTypes.RANDOM) {
             question.answers = reduceArray(question.answers, question.maximum);
-            resolve(question);
-        } else {
-            resolve(question);
         }
+
+        resolve(question);
     } else {
         resolve('Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.')
     }
