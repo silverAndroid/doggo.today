@@ -15,6 +15,7 @@
     "axios": "^0.16.2",
     "body-parser": "^1.18.2",
     "express": "^4.16.2",
+    "facebook-messenger-bot": "^0.2.0",
     "morgan": "^1.9.0"
   }
 }
