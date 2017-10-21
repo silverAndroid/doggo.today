@@ -6,9 +6,6 @@ var db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
 mongoose.Promise = global.Promise
 
-var db = mongoose.connection
-db.on('error', console.error.bind(console, 'connection error:'))
-
 const MODEL_NAME = 'Dog'
 
 class DogSchema {
@@ -31,15 +28,15 @@ class DogSchema {
 			dogState: { type: String, enum: ['ADOPTED', 'FOSTERED', 'AVAILABLE'] }
 		})
 
-		schema.methods.register = async (facebook_id, name, breed, age, size, personality, dogState) => {
+		schema.statics.register = async (facebook_id, name, breed, age, size, personality, dogState) => {
 			return this.create({facebook_id, name, breed, age, size, personality})
 		}
 
-		schema.methods.findDoggo = async (facebook_id) => {
+		schema.statics.findDoggo = async (facebook_id) => {
 		    return this.find({facebook_id}).exec()
 		}
 
-		schema.methods.findAvailableDoggos = async () => {
+		schema.statics.findAvailableDoggos = async () => {
 			return this.find({dogState: 'AVAILABLE'}).exec()
 		}
 
