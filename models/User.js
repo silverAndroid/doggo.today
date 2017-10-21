@@ -1,4 +1,11 @@
-const mongoose = require('mongoose')
+var mongoose = require('mongoose')
+
+mongoose.connect('mongodb://localhost/doggo')
+
+var db = mongoose.connection
+db.on('error', console.error.bind(console, 'connection error:'))
+mongoose.Promise = global.Promise
+
 const MODEL_NAME = 'User'
 
 class UserModel {
