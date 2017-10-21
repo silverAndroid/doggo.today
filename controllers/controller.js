@@ -3,7 +3,7 @@ const DB = require('../services/dbService')
 
 module.exports.test = (req, res) => {
 
-	DB.FindAllUsers((err, users) => {
+	DB.GetAllUsers((err, users) => {
 		if(!err){
 			res.status(200).send(users)
 		}else{

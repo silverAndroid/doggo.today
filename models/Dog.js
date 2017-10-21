@@ -36,13 +36,19 @@ module.exports.register = (name, breed, age, size, personality, dogState, callba
 	})
 }
 
-module.exports.findDog = (id, callback) => {
-    dog.findOne({id: _id}, (err, doggo) => {
+module.exports.getDogById = (id, callback) => {
+    dog.findOne({id}, (err, doggo) => {
         callback(err, doggo)
     })
 }
 
-module.exports.findAllDoggos = (callback) => {
+module.exports.getDogByBreed = (breed, callback) => {
+	dog.findOne({breed}, (err, doggo) => {
+        callback(err, doggo)
+    })
+}
+
+module.exports.getAllDoggos = (callback) => {
     dog.find({}, (err, doggos) => {
         callback(err, doggos)
     })
