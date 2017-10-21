@@ -14,8 +14,8 @@ class UserModel {
 		var schema = new mongoose.Schema({
 			id: { type: String, required: true, unique: true },
 			external_id: { type: String, required: true, index: true },
-			dogType: { type: String, required: true },
-			dogSize: { type: String, required: false },
+			desiredDogType: { type: String, required: true },
+			desiredDogSize: { type: String, required: false },
 			created: { type: Date, default: Date.now },
 		})
 
