@@ -19,7 +19,11 @@ class UserModel {
 			created: { type: Date, default: Date.now },
 		})
 
-		schema.statics.findUserByExternalId = async function (external_id) {
+		schema.statics.register = async (facebook_id, name, breed, age, size, personality) => {
+			return this.create({facebook_id, name, breed, age, size, personality})
+		}
+
+		schema.statics.findUserByExternalId = async (external_id) => {
       		return this.find({external_id}).exec()
     	}
 
