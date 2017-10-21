@@ -11,7 +11,7 @@ module.exports.findAllDoggos = async (req, res) => {
 
 		const dogs = await Dog.findAll()
 
-		res.send(200).json(dogs)
+		res.status(200).json(dogs)
 
 	} catch (err) {
 		console.log(err);
