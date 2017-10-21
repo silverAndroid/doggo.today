@@ -11,12 +11,27 @@ const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
 
 bot.on('message', async message => {
     const {sender} = message;
-    await sender.fetch('first_name');
+    await sender.fetch('first_name,profile_pic', true);
+    const {text, images, location} = message;
+
+  	if (text) {
+        console.log(text); 
+		buttons = new messengerBot.Buttons();
+		buttons.add({text: 'Google', url: 'http://google.com'});
+		buttons.add({text: 'Yahoo', url: 'http://yahoo.com'});
+
+		out = new messengerBot.Elements();
+	    out.add({text: 'search engines', subtext: 'click to get redirected', buttons}); // add a card
+	  	await bot.send(sender.id, out);     
+    }
  
-    const out = new messengerBot.Elements();
-    out.add({text: `hey ${sender.first_name}, how are you!`});
- 
-    await bot.send(sender.id, out);
+    if (images) {
+        console.log(images);    
+    }
+
+    if (location) {
+    	console.log(location)
+    }
 });
  
 app.use('/facebook', bot.router());
