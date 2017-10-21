@@ -113,18 +113,20 @@ function getQuestionTwo(userID, resolve) {
 }*/
 
 function reduceArray(array, maximum) {
-    const reduced = [];
-    const indices = [];
+    return shuffle(array).slice(0, maximum);
+}
 
-    while (reduced.length < maximum) {
-        const index = Math.floor(Math.random() * array.length);
-        if (!indices.some(i => i === index)) {
-            reduced.push(array[index]);
-            indices.push(index);
-        }
+function shuffle(arr) {
+    let clone = [...arr];
+
+    for (let i = clone.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = clone[i];
+        clone[i] = clone[j];
+        clone[j] = tmp;
     }
 
-    return reduced;
+    return clone;
 }
 
 function capitalize(string) {
