@@ -2,7 +2,7 @@ const DogModel = require('../models/Dog')
 const UserModel = require('../models/User')
 
 module.exports.FindAllUsers = (done) => {
-	return UserModel.FindAllUser(done)
+	return UserModel.findAllUser(done)
 }
 
 module.exports.RegisterDoggo = (owner_id, name, breed, age, size, personality, dogState = 'AVAILABLE', done) => {
