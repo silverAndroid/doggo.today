@@ -1,10 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
-const request = require('request');
+const messengerBot = require('facebook-messenger-bot');
 
 const app = express();
-const messengerBot = require('facebook-messenger-bot');
+const questionHandler = require('./questionHandler');
 const PAGE_ACCESS_TOKEN = 'EAABq08RmTRUBAKG5JwtXGbqjPpQm2rXqdYbaCLmqVb9Njhj24mIgKkT0ZCWlZBMERI7NeD0sOd3ZAsvPftyx58hbQvUxaef1CotXsZCFJLgoZC5ZB7XtrYiOMxJX9RdZBgqqKWYcFs26VzuG4JpSctB9boKIjDNfdWhPjst0KxRHDvy4ArOagfs'
 
 const bot = new messengerBot.Bot(PAGE_ACCESS_TOKEN, "lazer_cat");
@@ -17,12 +17,14 @@ bot.on('message', async message => {
 
     if (text) {
         console.log(text);
+        const {question, answers} = await questionHandler.onMessageReceived(text, sender.id);
         buttons = new messengerBot.Buttons();
-        buttons.add({text: 'Google', url: 'http://google.com'});
-        buttons.add({text: 'Yahoo', url: 'http://yahoo.com'});
+        answers.forEach(answer => {
+            buttons.add({text: answer, data: "hi"});
+        });
 
         out = new messengerBot.Elements();
-        out.add({text: 'search engines', subtext: 'click to get redirected', buttons}); // add a card
+        out.add({text: question, buttons}); // add a card
         await bot.send(sender.id, out);
     }
 
