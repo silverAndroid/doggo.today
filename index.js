@@ -1,21 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
-const {Bot} = require('facebook-messenger-bot');
 
 const app = express();
-
-const bot = new Bot('117457765682453', 'b7f1d28559fa109bfe1d00080b246801');
-
-bot.on('message', async message => {
-    const {sender} = message;
-    await sender.fetch('first_name');
-
-    const out = new Elements();
-    out.add({text: `hey ${sender.first_name}, you're a good boy!`});
-
-    await bot.send(sender.id, out);
-});
 
 app.use(bodyParser.json());
 
@@ -24,9 +11,9 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 
-// Creates the endpoint for our webhook 
-app.post('/webhook', (req, res) => {  
- 
+// Creates the endpoint for our webhook
+app.post('/webhook', (req, res) => {
+ console.log(req.body);
   let body = req.body;
 
   // Checks this is an event from a page subscription
@@ -35,7 +22,7 @@ app.post('/webhook', (req, res) => {
     // Iterates over each entry - there may be multiple if batched
     body.entry.forEach(function(entry) {
 
-      // Gets the message. entry.messaging is an array, but 
+      // Gets the message. entry.messaging is an array, but
       // will only ever contain one message, so we get index 0
       let webhookEvent = entry.messaging[0];
       console.log(webhookEvent);
@@ -51,30 +38,30 @@ app.post('/webhook', (req, res) => {
 });
 
 app.get('/webhook', (req, res) => {
-
   // Your verify token. Should be a random string.
   let VERIFY_TOKEN = "lazer_cat"
-    
+
   // Parse the query params
   let mode = req.query['hub.mode'];
   let token = req.query['hub.verify_token'];
   let challenge = req.query['hub.challenge'];
-    
+
   // Checks if a token and mode is in the query string of the request
   if (mode && token) {
-  
+
     // Checks the mode and token sent is correct
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      
+
       // Responds with the challenge token from the request
       console.log('WEBHOOK_VERIFIED');
       res.status(200).send(challenge);
-    
+
     } else {
       // Responds with '403 Forbidden' if verify tokens do not match
-      res.sendStatus(403);      
+      res.sendStatus(403);
     }
   }
 });
+
 
 app.listen(3000);
