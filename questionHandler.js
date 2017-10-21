@@ -1,7 +1,10 @@
 const fs = require('fs');
-
+const DogModel = require('./models/Dog')
+const Dog = new DogModel().createModel()
 const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
 const userMap = new Map();
+const messengerBot = require('facebook-messenger-bot');
+
 const QuestionTypes = {
     SINGLE: 0,
     RANDOM: 1,
@@ -65,8 +68,49 @@ function getQuestion(message, userID, resolve) {
         userMap.set(userID, questionNumber);
         resolve(question);
     } else {
-        resolve({question: 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.'});
+        resolve({
+            elements: returnPotentialDoggos(userID),
+        });
     }
+}
+
+const returnPotentialDoggos = (userID) => {
+
+    // await Dog.register("fbid", "Dog 1", "breed", "age", "size", "personality", "AVAILABLE")
+    // await Dog.register("fbid", "Dog 2", "breed", "age", "size", "personality", "AVAILABLE")
+    // //if doggos found
+    // potentialDoggos = await Dog.findAvailableDoggos()
+
+
+    const out = new messengerBot.Elements();
+
+    const potentialDoggos = [{
+        external_id: "fbid", 
+        name: "Dog 1", 
+        breed: "doggo bread", 
+        age: "puppy", 
+        size: "small", 
+        personality: "fluffy", 
+        availability: "AVAILABLE"
+    }, {
+        external_id: "fbid", 
+        name: "Dog 2", 
+        breed: "doggo bread", 
+        age: "puppy", 
+        size: "small", 
+        personality: "fluffy", 
+        availability: "AVAILABLE"
+    }];
+
+    // console.log(potentialDoggos)
+    for (let {name} of potentialDoggos){
+         out.add({text: name, image: "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/00100dPORTRAIT_00100_BURST20170914121422905_C.width-1000.jpg"});
+    }
+    // console.log(out)
+    console.log(out)
+    return out
+    //if no doggos found
+    // resolve({question: 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.'});
 }
 
 function reduceArray(array, maximum) {

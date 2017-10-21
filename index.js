@@ -19,7 +19,8 @@ bot.on('message', async (message) => {
     const { sender, text, images, location } = message;
     if (text) {
         const {question, answers} = await questionHandler.onMessageReceived(text, sender.id);
-        const buttons = new messengerBot.Buttons();
+        console.log(question, answers)
+        const buttons    = new messengerBot.Buttons();
         answers.forEach(answer => {
             buttons.add({text: answer, data: answer});
         });
@@ -27,6 +28,8 @@ bot.on('message', async (message) => {
         const out = new messengerBot.Elements();
         out.add({text: question, buttons}); // add a card
         await bot.send(sender.id, out);
+                        
+        
     }
 
     if (images) {
@@ -40,21 +43,40 @@ bot.on('message', async (message) => {
 
 bot.on('postback', async (event, { sender, text, images, location }, data) => {
     let buttons;
-    const {question, answers} = await questionHandler.onMessageReceived(data, sender.id);
-    if (!(!answers)) {
-        buttons = new messengerBot.Buttons();
-        answers.forEach(answer => {
-            buttons.add({text: answer, data: answer});
-        });
-    }
+    const {question, answers, elements} = await questionHandler.onMessageReceived(data, sender.id);
+    if (!elements) {
+        if (!(!answers)) {
+            buttons = new messengerBot.Buttons();
+            answers.forEach(answer => {
+                buttons.add({text: answer, data: answer});
+            });
+        }
 
-    const element = {text: question};
-    if (!(!buttons)) {
-        element.buttons = buttons;
+        const element = {text: question};
+        if (!(!buttons)) {
+            element.buttons = buttons;
+        }
+        const out = new messengerBot.Elements();
+        out.add(element); // add a card
+        await bot.send(sender.id, out);
+    } else {
+        console.log(elements);
+        buttons = new messengerBot.Buttons();
+        for(let element of elements._elements) {
+            console.log("element: " + element.text)
+            buttons.add({text: element.text, data: element.text});
+        }
+
+        const element = {text: "choose your doggo:"}
+        const out = new messengerBot.Elements();
+        if (!(!buttons)) {
+            element.buttons = buttons;
+        }
+        out.add(element)
+        await bot.send(sender.id, elements);
+        await bot.send(sender.id, out)
     }
-    const out = new messengerBot.Elements();
-    out.add(element); // add a card
-    await bot.send(sender.id, out);
+   
 });
 
 bot.on('invalid-postback', message => console.error(message));
