@@ -16,6 +16,7 @@ bot.on('message', async (message) => {
     if (text) {
         console.log(text);
         const {question, answers} = await questionHandler.onMessageReceived(text, sender.id);
+        console.log(question);
         const buttons = new messengerBot.Buttons();
         answers.forEach(answer => {
             buttons.add({text: answer, data: answer});
@@ -38,6 +39,7 @@ bot.on('message', async (message) => {
 bot.on('postback', async (event, { sender, text, images, location }, data) => {
     console.log(data);
     const {question, answers} = await questionHandler.onMessageReceived(data, sender.id);
+    console.log(question);
     const buttons = new messengerBot.Buttons();
     answers.forEach(answer => {
         buttons.add({text: answer, data: answer});

@@ -69,6 +69,7 @@ function getQuestionOne(userID, resolve) {
     }
 
     resolve(question);
+    console.log('resolved question 1')
 }
 
 function getQuestionTwo(userID, resolve) {
@@ -78,10 +79,11 @@ function getQuestionTwo(userID, resolve) {
         cb(null, true);
     }, () => {
         console.log('Test complete');
-    });
 
-    const question = questions[1];
-    resolve(question);
+        const question = questions[1];
+        resolve(question);
+        console.log('resolved question 2');
+    });
 }
 
 /*function getQuestion(userID, resolve, questionNumber = 0) {
