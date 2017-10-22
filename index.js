@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
 const logger = require('morgan');
 const messengerBot = require('facebook-messenger-bot');
 const axios = require('axios');
@@ -35,18 +34,26 @@ bot.on('message', async (message) => {
 
 bot.on('postback', async (event, {sender, text, images}, data) => {
     if (data.hasOwnProperty('id')) {
+        // Send user is interested
+        let buttons = new messengerBot.Buttons();
         const message = new messengerBot.Elements();
-        message.add({text: 'A user is interested in your dog.'});
+        const senderProfile = await axios.get(`https://graph.facebook.com/v2.10/${sender.id}`, {headers: {'Authorization': `OAuth ${PAGE_ACCESS_TOKEN}`}});
+
+        const {first_name: senderFirstName, last_name: senderLastName, profile_pic: senderProfilePic} = senderProfile.data;
+        let name = `${senderFirstName} ${senderLastName}`;
+        buttons.add({text: 'Interested!', url: `https://www.facebook.com/search/top/?q=${name}`});
+        message.add({image: senderProfilePic, text: `${name} is interested in your doggo!`, buttons});
         bot.send(data.id, message);
 
-        const response = await axios.get(`https://graph.facebook.com/v2.10/${data.id}`, {headers: {'Authorization': `OAuth ${PAGE_ACCESS_TOKEN}`}});
-        const {first_name, last_name, profile_pic} = response.data
-        const name = `${first_name} ${last_name}`;
+        // Send contact info of doggo owner
+        const profile = await axios.get(`https://graph.facebook.com/v2.10/${data.id}`, {headers: {'Authorization': `OAuth ${PAGE_ACCESS_TOKEN}`}});
+        const {first_name: profileFirstName, last_name: profileLastName, profile_pic: profilePic} = profile.data;
+        name = `${profileFirstName} ${profileLastName}`;
 
         const user = new messengerBot.Elements();
-        const buttons = new messengerBot.Buttons();
+        buttons = new messengerBot.Buttons();
         buttons.add({text: 'Take me to the doggo', url: `https://www.facebook.com/search/top/?q=${name}`});
-        user.add({image: profile_pic, text: name, buttons});
+        user.add({image: profilePic, text: name, buttons});
         bot.send(sender.id, user);
     } else {
         const {question, answers, elements, locationUI} = await questionHandler.onMessageReceived(data, sender.id);
@@ -58,9 +65,9 @@ bot.on('invalid-postback', message => console.error(message));
 
 app.use('/facebook', bot.router());
 
-app.get('/test', controller.test)
-app.get('/createUser', controller.createUser)
-app.get('/GetAvailableDoggos', controller.GetAvailableDoggos)
+app.get('/test', controller.test);
+app.get('/createUser', controller.createUser);
+app.get('/GetAvailableDoggos', controller.GetAvailableDoggos);
 
 if (process.env.NODE_ENV !== 'test') {
     app.use(logger('dev'));
@@ -101,11 +108,9 @@ async function sendQuestion(question, answers, sender, elements, location) {
         const element = {text: "choose your doggo:", buttons};		
         const out = new messengerBot.Elements();
         out.add(element);		
-        console.log("elements after: ")		
+        console.log("elements after: ");
         console.dir(ui  );
 
         await bot.send(sender.id, ui);
-        // await bot.send(sender.id, out);
-        
     }
 }
