@@ -1,23 +1,80 @@
 const fs = require('fs');
-const DogModel = require('./models/Dog')
-const Dog = new DogModel().createModel()
-const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
+
 const userMap = new Map();
+const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
 const messengerBot = require('facebook-messenger-bot');
+const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if I have a doggo for you.';
+const END_OF_GIVING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if someone is interested in taking your doggo. Please keep in mind that potential adopters will be able to see your doggo\'s profile.';
+const RESTART_STR = 'I noticed you entered a new message. Did you want to fill out another application?';
 
 const QuestionTypes = {
     SINGLE: 0,
     RANDOM: 1,
+    INPUT: 2,
+    PICTURE: 3,
+    LOCATION: 4,
 };
-const questions = [
+const Pages = {
+    DESCRIPTION: 3,
+    LOCATION: 4,
+    IMAGE: 5,
+    DOG_NAME: 6,
+};
+const initialQuestion = {
+    question: 'Are you putting your doggo up for adoption or adopting a doggo?',
+    answers: [
+        // TODO: Pick phrase that doesn't get cut off
+        'Doggo for adoption',
+        'Adopting a doggo'
+    ],
+    type: QuestionTypes.SINGLE,
+};
+const givingAwayQuestions = [
     {
-        question: 'What dog breed do you like?',
-        answers: breeds,
-        type: QuestionTypes.RANDOM,
-        maximum: 3,
+        question: 'I have 7 questions for you. \n1) What breed is your doggo?',
+        type: QuestionTypes.INPUT,
     },
     {
-        question: 'How old would you like your dog to be?',
+        question: '2) Is your doggo a puppy, an adult, or is he/she elderly?',
+        type: QuestionTypes.SINGLE,
+        answers: [
+            'Puppy',
+            'Adult',
+            'Elderly',
+        ],
+    },
+    {
+        question: '3) Do you have a small or large doggo?',
+        answers: [
+            'Small',
+            'Large',
+        ],
+        type: QuestionTypes.SINGLE,
+    },
+    {
+        question: '4) How would you describe your doggo? (Independent, active)',
+        type: QuestionTypes.INPUT,
+    },
+    {
+        question: '5) Where does the doggo live?',
+        type: QuestionTypes.LOCATION,
+    },
+    {
+        question: '6) Please upload a picture of your doggo.',
+        type: QuestionTypes.PICTURE,
+    },
+    {
+        question: '7) And before I forget! What\'s the name of your doggo?',
+        type: QuestionTypes.INPUT,
+    },
+];
+const adoptingQuestions = [
+    {
+        question: 'I have 6 questions for you. \n1) What doggo breed do you like?',
+        type: QuestionTypes.INPUT,
+    },
+    {
+        question: '2) How old would you like your doggo to be?',
         answers: [
             'Puppy',
             'Adult',
@@ -26,91 +83,189 @@ const questions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: 'What size dog would you like?',
+        question: '3) Would you like a small doggo or a large doggo?',
         answers: [
             'Small',
-            'Medium',
             'Large'
         ],
         type: QuestionTypes.SINGLE,
     },
     {
-        question: 'What kind of dog are you looking for?',
+        question: '4) What kind of doggo are you looking for?',
         answers: [
             'Playful',
             'Loves being outdoors',
             'Fluffy'
-        ]
+        ],
+        type: QuestionTypes.SINGLE,
+    },
+    {
+        question: '5) Where do you live?',
+        type: QuestionTypes.LOCATION,
+    },
+    {
+        question: '6) What is the radius you are willing to travel for your new doggo?',
+        type: QuestionTypes.INPUT,
     }
 ];
 
-module.exports.onMessageReceived = (message, userID) => new Promise((resolve, reject) => {
-    getQuestion(message, userID, resolve);
+module.exports.onMessageReceived = (message, userID) => new Promise((resolve) => {
+    // Get user if exists in user map
+    let user = getUser(userID);
+    // Increment question if answer is a given one
+    user = verifyAnswer(message, user);
+    sendQuestion(user, resolve);
 });
 
-function getQuestion(message, userID, resolve) {
-    let questionNumber = 0;
+module.exports.onImagesReceived = (images, userID) => new Promise((resolve) => {
+    let user = getUser(userID);
+    user = verifyImages(images, user);
+    sendQuestion(user, resolve);
+});
+
+module.exports.onLocationReceived = (location, userID) => new Promise((resolve) => {
+    let user = getUser(userID);
+    user = verifyLocation(location, user);
+    sendQuestion(user, resolve);
+});
+
+function getUser(userID) {
+    let user = {answers: [], question: 0, id: userID, restart: false};
     if (userMap.has(userID)) {
-        questionNumber = userMap.get(userID);
-        if (questions[questionNumber].answers.some(answer => message === answer)) {
-            questionNumber += 1;
+        user = userMap.get(userID);
+    }
+    return user;
+}
+
+function verifyAnswer(message, user) {
+    message = message.toLowerCase();
+    if (!user.questions) {
+        if (message === initialQuestion.answers[0].toLowerCase()) {
+            user.isAdopting = false;
+            user.questions = givingAwayQuestions;
+        } else if (message === initialQuestion.answers[1].toLowerCase()) {
+            user.isAdopting = true;
+            user.questions = adoptingQuestions;
         }
     } else {
-        userMap.set(userID, 0);
+        const question = user.questions[user.question];
+        if (user.question < user.questions.length) {
+            if (question.type === QuestionTypes.INPUT) {
+                user.question += 1;
+                user.answers.push({text: message});
+            } else if (question.type === QuestionTypes.SINGLE || question.type === QuestionTypes.RANDOM) {
+                if (user.questions[user.question].answers.some(answer => answer.toLowerCase() === message)) {
+                    user.question += 1;
+                    user.answers.push({text: message});
+                }
+            }
+        }
     }
 
-    if (questionNumber < questions.length) {
-        const question = questions[questionNumber];
-        if (question.type === QuestionTypes.RANDOM) {
-            question.answers = reduceArray(question.answers, question.maximum);
-        }
+    return user;
+}
 
-        userMap.set(userID, questionNumber);
+function verifyImages(images, user) {
+    if (!!user.questions) {
+        const question = user.questions[user.question];
+        if (question.type === QuestionTypes.PICTURE) {
+            user.question += 1;
+            user.answers.push({images}); // images is an array of images
+        }
+    }
+
+    return user;
+}
+
+function verifyLocation({ lat, long }, user) {
+    if (!!user.questions) {
+        const question = user.questions[user.question];
+        if (question.type === QuestionTypes.LOCATION) {
+            user.question += 1;
+            user.answers.push({lat, long});
+        }
+    }
+
+    return user;
+}
+
+function sendQuestion(user, resolve) {
+    // Check if new question is past the limit
+    const questionNumber = user.question;
+    const question = !user.questions ? initialQuestion : user.questions[questionNumber];
+    if (!user.questions) {
         resolve(question);
     } else {
-        resolve({
-            elements: returnPotentialDoggos(userID),
-        });
+        if (questionNumber < user.questions.length) {
+            if (question.type === QuestionTypes.RANDOM) {
+                question.answers = reduceArray(question.answers, question.maximum);
+            } else if (question.type === QuestionTypes.LOCATION) {
+                userMap.set(user.id, user);
+                return openLocationPrompt(user, resolve);
+            }
+            console.log(questionNumber, question);
+
+            userMap.set(user.id, user);
+            resolve(question);
+        } else {
+            // user.restart = true;
+            const isAdopting = user.isAdopting;
+            if (isAdopting) {
+                const doggos = getPotentialDoggosUI(user);
+                if (/*!user.restart && */doggos.length > 0) {
+                    return resolve({elements: doggos});
+                }
+            }
+            const sentence = /*user.restart ? RESTART_STR :*/ (isAdopting ? END_OF_ADOPTING_STR : END_OF_GIVING_STR);
+            resolve({question: sentence});
+        } // TODO: Add option to restart from beginning
     }
 }
 
-const returnPotentialDoggos = (userID) => {
-
-    // await Dog.register("fbid", "Dog 1", "breed", "age", "size", "personality", "AVAILABLE")
-    // await Dog.register("fbid", "Dog 2", "breed", "age", "size", "personality", "AVAILABLE")
-    // //if doggos found
-    // potentialDoggos = await Dog.findAvailableDoggos()
-
-
+function getPotentialDoggosUI(matchingUser) {
     const out = new messengerBot.Elements();
+    const potentialDoggos = getMatchings(matchingUser);
 
-    const potentialDoggos = [{
-        external_id: "fbid", 
-        name: "Dog 1", 
-        breed: "doggo bread", 
-        age: "puppy", 
-        size: "small", 
-        personality: "fluffy", 
-        availability: "AVAILABLE"
-    }, {
-        external_id: "fbid", 
-        name: "Dog 2", 
-        breed: "doggo bread", 
-        age: "puppy", 
-        size: "small", 
-        personality: "fluffy", 
-        availability: "AVAILABLE"
-    }];
-
-    // console.log(potentialDoggos)
-    for (let {name} of potentialDoggos){
-         out.add({text: name, image: "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/00100dPORTRAIT_00100_BURST20170914121422905_C.width-1000.jpg"});
+    for (let {id} of potentialDoggos) {
+        const user = userMap.get(id);
+        out.add({
+            text: user.answers[Pages.DOG_NAME].text,
+            subtext: user.answers[Pages.DESCRIPTION].text,
+            image: user.answers[Pages.IMAGE].images[0],
+        });
     }
-    // console.log(out)
-    console.log(out)
-    return out
-    //if no doggos found
-    // resolve({question: 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.'});
+    return out;
+}
+
+function openLocationPrompt(user, resolve) {
+    const replies = new messengerBot.QuickReplies();
+    replies.add({text: 'location', isLocation: true});
+    const out = new messengerBot.Elements();
+    out.add({text: user.questions[Pages.LOCATION].question});
+    out.setQuickReplies(replies);
+    resolve({locationUI: out});
+}
+
+function getMatchings(matchingUser) {
+    const scores = [];
+    for (let [id, user] of userMap) {
+        if (matchingUser.id === id || user.isAdopting) {
+            continue;
+        }
+
+        const length = user.answers.length > matchingUser.answers.length ? matchingUser.answers.length : user.answers.length;
+        let score = 0;
+        for (let i = 0; i < length; i++) {
+            if (matchingUser.answers[i] === user.answers[i]) {
+                score += 1;
+            }
+        }
+        scores.push({id, score});
+    }
+
+    scores.sort((a, b) => b.score - a.score);
+    matchingUser.scores = scores;
+    return scores;
 }
 
 function reduceArray(array, maximum) {
