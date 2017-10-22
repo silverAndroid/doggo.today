@@ -143,8 +143,8 @@ function verifyImages(images, user) {
         const question = user.questions[user.question];
         if (question.type === QuestionTypes.PICTURE) {
             user.question += 1;
-            // user.answers.push({images}); // images is a url
-            user.answers.push({images: ['https://i.ytimg.com/vi/SfLV8hD7zX4/maxresdefault.jpg']});
+            user.answers.push({images}); // images is a url
+            // user.answers.push({images: ['https://i.ytimg.com/vi/SfLV8hD7zX4/maxresdefault.jpg']});
         }
     }
 
