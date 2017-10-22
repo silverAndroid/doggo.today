@@ -3,8 +3,8 @@ const fs = require('fs');
 const userMap = new Map();
 const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
 const messengerBot = require('facebook-messenger-bot');
-const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if I have a dog for you.';
-const END_OF_GIVING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if someone is interested in taking your dog. Please keep in mind that potential adopters will be able to see your dog\'s profile.';
+const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if I have a doggo for you.';
+const END_OF_GIVING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if someone is interested in taking your doggo. Please keep in mind that potential adopters will be able to see your doggo\'s profile.';
 const RESTART_STR = 'I noticed you entered a new message. Did you want to fill out another application?';
 
 const QuestionTypes = {
@@ -12,23 +12,30 @@ const QuestionTypes = {
     RANDOM: 1,
     INPUT: 2,
     PICTURE: 3,
+    LOCATION: 4,
+};
+const Pages = {
+    DESCRIPTION: 3,
+    LOCATION: 4,
+    IMAGE: 5,
+    DOG_NAME: 6,
 };
 const initialQuestion = {
-    question: 'Are you putting your dog up for adoption or adopting a dog?',
+    question: 'Are you putting your doggo up for adoption or adopting a doggo?',
     answers: [
         // TODO: Pick phrase that doesn't get cut off
-        'Dog for adoption',
-        'Adopting a dog'
+        'Doggo for adoption',
+        'Adopting a doggo'
     ],
     type: QuestionTypes.SINGLE,
 };
 const givingAwayQuestions = [
     {
-        question: 'I have 6 questions for you. \n1) What breed is your dog?',
+        question: 'I have 7 questions for you. \n1) What breed is your doggo?',
         type: QuestionTypes.INPUT,
     },
     {
-        question: '2) Is your dog a puppy, an adult, or is he/she elderly?',
+        question: '2) Is your doggo a puppy, an adult, or is he/she elderly?',
         type: QuestionTypes.SINGLE,
         answers: [
             'Puppy',
@@ -37,7 +44,7 @@ const givingAwayQuestions = [
         ],
     },
     {
-        question: '3) Do you have a small or large dog?',
+        question: '3) Do you have a small or large doggo?',
         answers: [
             'Small',
             'Large',
@@ -45,25 +52,29 @@ const givingAwayQuestions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: '4) How would you describe your dog? (Independent, active)',
+        question: '4) How would you describe your doggo? (Independent, active)',
         type: QuestionTypes.INPUT,
     },
     {
-        question: '5) Please upload a picture of your dog.',
+        question: '5) Where does the doggo live?',
+        type: QuestionTypes.LOCATION,
+    },
+    {
+        question: '6) Please upload a picture of your doggo.',
         type: QuestionTypes.PICTURE,
     },
     {
-        question: '6) And before I forget! What\'s the name of your dog?',
+        question: '7) And before I forget! What\'s the name of your doggo?',
         type: QuestionTypes.INPUT,
     },
 ];
 const adoptingQuestions = [
     {
-        question: 'I have 4 questions for you. \n1) What dog breed do you like?',
+        question: 'I have 6 questions for you. \n1) What doggo breed do you like?',
         type: QuestionTypes.INPUT,
     },
     {
-        question: '2) How old would you like your dog to be?',
+        question: '2) How old would you like your doggo to be?',
         answers: [
             'Puppy',
             'Adult',
@@ -72,7 +83,7 @@ const adoptingQuestions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: '3) Would you like a small dog or a large dog?',
+        question: '3) Would you like a small doggo or a large doggo?',
         answers: [
             'Small',
             'Large'
@@ -80,14 +91,22 @@ const adoptingQuestions = [
         type: QuestionTypes.SINGLE,
     },
     {
-        question: '4) What kind of dog are you looking for?',
+        question: '4) What kind of doggo are you looking for?',
         answers: [
             'Playful',
             'Loves being outdoors',
             'Fluffy'
         ],
         type: QuestionTypes.SINGLE,
-    }
+    },
+    {
+        question: '5) Where do you live?',
+        type: QuestionTypes.LOCATION,
+    },
+    /*{
+        question: '6) What is the radius you are willing to travel for your new doggo?',
+        type: QuestionTypes.INPUT,
+    }*/
 ];
 
 module.exports.onMessageReceived = (message, userID) => new Promise((resolve) => {
@@ -104,6 +123,12 @@ module.exports.onImagesReceived = (images, userID) => new Promise((resolve) => {
     sendQuestion(user, resolve);
 });
 
+module.exports.onLocationReceived = (location, userID) => new Promise((resolve) => {
+    let user = getUser(userID);
+    user = verifyLocation(location, user);
+    sendQuestion(user, resolve);
+});
+
 function getUser(userID) {
     let user = {answers: [], question: 0, id: userID, restart: false};
     if (userMap.has(userID)) {
@@ -116,8 +141,10 @@ function verifyAnswer(message, user) {
     message = message.toLowerCase();
     if (!user.questions) {
         if (message === initialQuestion.answers[0].toLowerCase()) {
+            user.isAdopting = false;
             user.questions = givingAwayQuestions;
         } else if (message === initialQuestion.answers[1].toLowerCase()) {
+            user.isAdopting = true;
             user.questions = adoptingQuestions;
         }
     } else {
@@ -143,8 +170,19 @@ function verifyImages(images, user) {
         const question = user.questions[user.question];
         if (question.type === QuestionTypes.PICTURE) {
             user.question += 1;
-            user.answers.push({images}); // images is a url
-            // user.answers.push({images: ['https://i.ytimg.com/vi/SfLV8hD7zX4/maxresdefault.jpg']});
+            user.answers.push({images}); // images is an array of images
+        }
+    }
+
+    return user;
+}
+
+function verifyLocation({ lat, long }, user) {
+    if (!!user.questions) {
+        const question = user.questions[user.question];
+        if (question.type === QuestionTypes.LOCATION) {
+            user.question += 1;
+            user.answers.push({lat, long});
         }
     }
 
@@ -161,6 +199,9 @@ function sendQuestion(user, resolve) {
         if (questionNumber < user.questions.length) {
             if (question.type === QuestionTypes.RANDOM) {
                 question.answers = reduceArray(question.answers, question.maximum);
+            } else if (question.type === QuestionTypes.LOCATION) {
+                userMap.set(user.id, user);
+                return openLocationPrompt(user, resolve);
             }
             console.log(questionNumber, question);
 
@@ -168,9 +209,9 @@ function sendQuestion(user, resolve) {
             resolve(question);
         } else {
             // user.restart = true;
-            const isAdopting = user.questions === adoptingQuestions;
+            const isAdopting = user.isAdopting;
             if (isAdopting) {
-                const doggos = getPotentialDoggos(user);
+                const doggos = getPotentialDoggosUI(user);
                 if (/*!user.restart && */doggos.length > 0) {
                     return resolve({elements: doggos});
                 }
@@ -181,36 +222,52 @@ function sendQuestion(user, resolve) {
     }
 }
 
-const getPotentialDoggos = (matchingUser) => {
-
-    // await Dog.register("fbid", "Dog 1", "breed", "age", "size", "personality", "AVAILABLE")
-    // await Dog.register("fbid", "Dog 2", "breed", "age", "size", "personality", "AVAILABLE")
-    // //if doggos found
-    // potentialDoggos = await Dog.findAvailableDoggos()
-
-
+function getPotentialDoggosUI(matchingUser) {
     const out = new messengerBot.Elements();
     const potentialDoggos = getMatchings(matchingUser);
 
     for (let {id} of potentialDoggos) {
-        console.log("id: " + id);
         const user = userMap.get(id);
-        console.log("user: ")
-        console.log(user)
+        const buttons = new messengerBot.Buttons();
+        buttons.add({text: 'Select', data: id});
         out.add({
-            text: user.answers[5].text,
-            subtext: user.answers[3].text,
-            image: user.answers[4].images[0],
+            text: user.answers[Pages.DOG_NAME].text,
+            subtext: user.answers[Pages.DESCRIPTION].text,
+            image: user.answers[Pages.IMAGE].images[0],
+            buttons,
         });
     }
-    console.dir(out);
+
+    /*const buttons = new messengerBot.Buttons();
+    for (let element of out._elements) {
+        console.log("element: " + element.text);
+        buttons.add({text: element.text, data: element.text});
+    }
+
+    const element = {text: "choose your doggo:"};
+    const chooseUI = new messengerBot.Elements();
+    if (!!buttons) {
+        element.buttons = buttons;
+    }
+    chooseUI.add(element);
+    console.log("elements after: ");
+    console.dir(chooseUI);*/
     return out;
-};
+}
+
+function openLocationPrompt(user, resolve) {
+    const replies = new messengerBot.QuickReplies();
+    replies.add({text: 'location', isLocation: true});
+    const out = new messengerBot.Elements();
+    out.add({text: user.questions[Pages.LOCATION].question});
+    out.setQuickReplies(replies);
+    resolve({elements: out});
+}
 
 function getMatchings(matchingUser) {
     const scores = [];
     for (let [id, user] of userMap) {
-        if (matchingUser.id === id || user.answers.length != 6) {
+        if (matchingUser.id === id || user.isAdopting) {
             continue;
         }
 

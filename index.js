@@ -26,6 +26,8 @@ bot.on('message', async (message) => {
     }
 
     if (location) {
+        const {question, answers} = await questionHandler.onLocationReceived(location, sender.id);
+        await sendQuestion(question, answers, sender);
         console.log(location)
     }
 });
@@ -66,23 +68,6 @@ async function sendQuestion(question, answers, sender, elements) {
         out.add(element); // add a card
         await bot.send(sender.id, out);
     } else {
-        console.log("elements before: ")
-        console.dir(elements);
-        buttons = new messengerBot.Buttons();
-        for (let element of elements._elements) {
-            console.log("element: " + element.text);
-            buttons.add({text: element.text, data: element.text});
-        }
-
-        const element = {text: "choose your doggo:"};
-        const out = new messengerBot.Elements();
-        if (!!buttons) {
-            element.buttons = buttons;
-        }
-        out.add(element);
-        console.log("elements after: ")
-        console.dir(elements);
         await bot.send(sender.id, elements);
-        // await bot.send(sender.id, out)
     }
 }
