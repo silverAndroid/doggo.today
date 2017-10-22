@@ -223,7 +223,7 @@ function sendQuestion(user, resolve) {
 }
 
 function convertLongLatToDistance(lat1, lat2, lon2, lon1) {
-    var R = 6371e3; // metres
+    var R = 6371; // metres
     var φ1 = degreeToRadians(lat1);
     var φ2 = degreeToRadians(lat2);
     var Δφ = degreeToRadians(lat2 - lat1); 
