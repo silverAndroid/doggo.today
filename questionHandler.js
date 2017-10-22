@@ -177,7 +177,7 @@ function verifyImages(images, user) {
     return user;
 }
 
-function verifyLocation({ lat, long }, user) {
+function verifyLocation({lat, long}, user) {
     if (!!user.questions) {
         const question = user.questions[user.question];
         if (question.type === QuestionTypes.LOCATION) {
@@ -210,11 +210,9 @@ function sendQuestion(user, resolve) {
         } else {
             // user.restart = true;
             const isAdopting = user.isAdopting;
-            if (isAdopting) {
-                const doggos = getPotentialDoggosUI(user);
-                if (/*!user.restart && */doggos.ids.length != 0) {
-                    return resolve({elements: doggos});
-                }
+            const doggos = getPotentialDoggosUI(user);
+            if (/*!user.restart && */doggos.ids.length !== 0) {
+                return resolve({elements: doggos});
             }
             const sentence = /*user.restart ? RESTART_STR :*/ (isAdopting ? END_OF_ADOPTING_STR : END_OF_GIVING_STR);
             resolve({question: sentence});
