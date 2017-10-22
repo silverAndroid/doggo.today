@@ -41,8 +41,6 @@ bot.on('invalid-postback', message => console.error(message));
 
 app.use('/facebook', bot.router());
 
-//for testing
-app.get('/getAllDoggos', controller.findAllDoggos);
 app.get('/test', controller.test)
 app.get('/createUser', controller.createUser)
 app.get('/GetAvailableDoggos', controller.GetAvailableDoggos)
@@ -75,10 +73,13 @@ async function sendQuestion(question, answers, sender, elements, location) {
             await bot.send(sender.id, out);
         }
     } else {
-        buttons = new messengerBot.Buttons();		
-        for (let element of elements._elements) {		
+        buttons = new messengerBot.Buttons();	
+        const {ui, ids} = elements;	
+        for (let i = 0; i < ui._elements.length; i++) {
+            const id = ids[i];
+            const element = ui._elements[i];
             console.log("element: " + element.text);		
-            buttons.add({text: element.text, data: element.text});		
+            buttons.add({text: element.text, data: id});		
         }				
         const element = {text: "choose your doggo:"};		
         const out = new messengerBot.Elements();		
@@ -87,9 +88,9 @@ async function sendQuestion(question, answers, sender, elements, location) {
         }		
         out.add(element);		
         console.log("elements after: ")		
-        console.dir(elements);
+        console.dir(ui  );
 
-        await bot.send(sender.id, elements);
+        await bot.send(sender.id, ui);
         await bot.send(sender.id, out);
         
     }

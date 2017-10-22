@@ -212,7 +212,7 @@ function sendQuestion(user, resolve) {
             const isAdopting = user.isAdopting;
             if (isAdopting) {
                 const doggos = getPotentialDoggosUI(user);
-                if (/*!user.restart && */doggos.length > 0) {
+                if (/*!user.restart && */doggos.ids.length != 0) {
                     return resolve({elements: doggos});
                 }
             }
@@ -225,6 +225,8 @@ function sendQuestion(user, resolve) {
 function getPotentialDoggosUI(matchingUser) {
     const out = new messengerBot.Elements();
     const potentialDoggos = getMatchings(matchingUser);
+    const output = {};
+    const ids = [];
 
     for (let {id} of potentialDoggos) {
         const user = userMap.get(id);
@@ -233,8 +235,11 @@ function getPotentialDoggosUI(matchingUser) {
             subtext: user.answers[Pages.DESCRIPTION].text,
             image: user.answers[Pages.IMAGE].images[0],
         });
+        ids.push(id);
     }
-    return out;
+    output.ui = out;
+    output.ids = ids;
+    return output;
 }
 
 function openLocationPrompt(user, resolve) {
