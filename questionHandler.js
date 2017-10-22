@@ -210,9 +210,11 @@ function sendQuestion(user, resolve) {
         } else {
             // user.restart = true;
             const isAdopting = user.isAdopting;
-            const doggos = getPotentialDoggosUI(user);
-            if (/*!user.restart && */doggos.ids.length !== 0) {
-                return resolve({elements: doggos});
+            if (isAdopting) {
+                const doggos = getPotentialDoggosUI(user);
+                if (doggos.ids.length !== 0) {
+                    return resolve({elements: doggos});
+                }
             }
             const sentence = /*user.restart ? RESTART_STR :*/ (isAdopting ? END_OF_ADOPTING_STR : END_OF_GIVING_STR);
             resolve({question: sentence});
