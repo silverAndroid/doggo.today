@@ -103,10 +103,10 @@ const adoptingQuestions = [
         question: '5) Where do you live?',
         type: QuestionTypes.LOCATION,
     },
-    /*{
+    {
         question: '6) What is the radius you are willing to travel for your new doggo?',
         type: QuestionTypes.INPUT,
-    }*/
+    }
 ];
 
 module.exports.onMessageReceived = (message, userID) => new Promise((resolve) => {
@@ -228,30 +228,12 @@ function getPotentialDoggosUI(matchingUser) {
 
     for (let {id} of potentialDoggos) {
         const user = userMap.get(id);
-        const buttons = new messengerBot.Buttons();
-        buttons.add({text: 'Select', data: id});
         out.add({
             text: user.answers[Pages.DOG_NAME].text,
             subtext: user.answers[Pages.DESCRIPTION].text,
             image: user.answers[Pages.IMAGE].images[0],
-            buttons,
         });
     }
-
-    /*const buttons = new messengerBot.Buttons();
-    for (let element of out._elements) {
-        console.log("element: " + element.text);
-        buttons.add({text: element.text, data: element.text});
-    }
-
-    const element = {text: "choose your doggo:"};
-    const chooseUI = new messengerBot.Elements();
-    if (!!buttons) {
-        element.buttons = buttons;
-    }
-    chooseUI.add(element);
-    console.log("elements after: ");
-    console.dir(chooseUI);*/
     return out;
 }
 
@@ -261,7 +243,7 @@ function openLocationPrompt(user, resolve) {
     const out = new messengerBot.Elements();
     out.add({text: user.questions[Pages.LOCATION].question});
     out.setQuickReplies(replies);
-    resolve({elements: out});
+    resolve({locationUI: out});
 }
 
 function getMatchings(matchingUser) {
