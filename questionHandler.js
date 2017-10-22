@@ -222,6 +222,24 @@ function sendQuestion(user, resolve) {
     }
 }
 
+function convertLongLatToDistance(lat1, lat2, lon2, lon1) {
+    var R = 6371e3; // metres
+    var φ1 = degreeToRadians(lat1);
+    var φ2 = degreeToRadians(lat2);
+    var Δφ = degreeToRadians(lat2 - lat1); 
+    var Δλ = degreeToRadians(lon2 - lon1); 
+    
+    var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c;
+}
+function degreeToRadians(degree) {
+    return degree * Math.PI / 180;
+}
+
 function getPotentialDoggosUI(matchingUser) {
     const out = new messengerBot.Elements();
     const potentialDoggos = getMatchings(matchingUser);
@@ -257,7 +275,10 @@ function openLocationPrompt(user, resolve) {
 function getMatchings(matchingUser) {
     const scores = [];
     for (let [id, user] of userMap) {
-        if (matchingUser.id === id || user.isAdopting) {
+        console.log(user.answers[Pages.LOCATION])
+        let potentialDogLocation = user.answers[Pages.LOCATION];
+        let userLocation = matchingUser.answers[Pages.LOCATION];
+        if (matchingUser.id === id || user.isAdopting || convertLongLatToDistance(potentialDogLocation.lat, userLocation.lat, potentialDogLocation.long, userLocation.long) > Number(matchingUser.answers[5].text)) {
             continue;
         }
 
