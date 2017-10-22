@@ -3,8 +3,9 @@ const fs = require('fs');
 const userMap = new Map();
 const breeds = JSON.parse(fs.readFileSync('./dog-breeds.json')).map(breed => capitalize(breed));
 const messengerBot = require('facebook-messenger-bot');
-const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if we have a dog for you.';
-const END_OF_GIVING_STR = 'Thank you for answering all of our questions! We\'ll contact you soon if someone is interested in taking your dog. Please keep in mind that potential adopters will be able to see your dog\'s profile.';
+const END_OF_ADOPTING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if I have a dog for you.';
+const END_OF_GIVING_STR = 'Thank you for answering all of our questions! I\'ll contact you soon if someone is interested in taking your dog. Please keep in mind that potential adopters will be able to see your dog\'s profile.';
+const RESTART_STR = 'I noticed you entered a new message. Did you want to fill out another application?';
 
 const QuestionTypes = {
     SINGLE: 0,
@@ -23,7 +24,7 @@ const initialQuestion = {
 };
 const givingAwayQuestions = [
     {
-        question: 'I have 5 questions for you. \n1) What breed is your dog?',
+        question: 'I have 6 questions for you. \n1) What breed is your dog?',
         type: QuestionTypes.INPUT,
     },
     {
@@ -49,8 +50,12 @@ const givingAwayQuestions = [
     },
     {
         question: '5) Please upload a picture of your dog.',
-        type: QuestionTypes.PICTURE
-    }
+        type: QuestionTypes.PICTURE,
+    },
+    {
+        question: '6) And before I forget! What\'s the name of your dog?',
+        type: QuestionTypes.INPUT,
+    },
 ];
 const adoptingQuestions = [
     {
@@ -100,7 +105,7 @@ module.exports.onImagesReceived = (images, userID) => new Promise((resolve) => {
 });
 
 function getUser(userID) {
-    let user = {answers: [], question: 0, id: userID};
+    let user = {answers: [], question: 0, id: userID, restart: false};
     if (userMap.has(userID)) {
         user = userMap.get(userID);
     }
@@ -138,7 +143,8 @@ function verifyImages(images, user) {
         const question = user.questions[user.question];
         if (question.type === QuestionTypes.PICTURE) {
             user.question += 1;
-            user.answers.push({images}); // images is a url
+            // user.answers.push({images}); // images is a url
+            user.answers.push({images: ['https://i.ytimg.com/vi/SfLV8hD7zX4/maxresdefault.jpg']});
         }
     }
 
@@ -161,18 +167,21 @@ function sendQuestion(user, resolve) {
             userMap.set(user.id, user);
             resolve(question);
         } else {
+            // user.restart = true;
             const isAdopting = user.questions === adoptingQuestions;
-            const doggos = returnPotentialDoggos(user.id);
-            if (isAdopting && doggos.length > 0) {
-                return resolve({elements: doggos});
+            if (isAdopting) {
+                const doggos = getPotentialDoggos(user);
+                if (/*!user.restart && */doggos.length > 0) {
+                    return resolve({elements: doggos});
+                }
             }
-            const sentence = isAdopting ? END_OF_ADOPTING_STR : END_OF_GIVING_STR;
+            const sentence = /*user.restart ? RESTART_STR :*/ (isAdopting ? END_OF_ADOPTING_STR : END_OF_GIVING_STR);
             resolve({question: sentence});
         } // TODO: Add option to restart from beginning
     }
 }
 
-const returnPotentialDoggos = (userID) => {
+const getPotentialDoggos = (matchingUser) => {
 
     // await Dog.register("fbid", "Dog 1", "breed", "age", "size", "personality", "AVAILABLE")
     // await Dog.register("fbid", "Dog 2", "breed", "age", "size", "personality", "AVAILABLE")
@@ -181,36 +190,27 @@ const returnPotentialDoggos = (userID) => {
 
 
     const out = new messengerBot.Elements();
+    const potentialDoggos = getMatchings(matchingUser);
 
-    const potentialDoggos = [{
-        external_id: "fbid", 
-        name: "Dog 1", 
-        breed: "doggo bread", 
-        age: "puppy", 
-        size: "small", 
-        personality: "fluffy", 
-        availability: "AVAILABLE"
-    }, {
-        external_id: "fbid", 
-        name: "Dog 2", 
-        breed: "doggo bread", 
-        age: "puppy", 
-        size: "small", 
-        personality: "fluffy", 
-        availability: "AVAILABLE"
-    }];
-
-    for (let {name} of potentialDoggos){
-         out.add({text: name, image: "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/00100dPORTRAIT_00100_BURST20170914121422905_C.width-1000.jpg"});
+    for (let {id} of potentialDoggos) {
+        console.log("id: " + id);
+        const user = userMap.get(id);
+        console.log("user: ")
+        console.log(user)
+        out.add({
+            text: user.answers[5].text,
+            subtext: user.answers[3].text,
+            image: user.answers[4].images[0],
+        });
     }
-    console.log(out);
+    console.dir(out);
     return out;
 };
 
-function updateMatchings(matchingUser) {
+function getMatchings(matchingUser) {
     const scores = [];
     for (let [id, user] of userMap) {
-        if (matchingUser.id === id) {
+        if (matchingUser.id === id || user.answers.length != 6) {
             continue;
         }
 

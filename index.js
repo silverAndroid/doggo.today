@@ -51,7 +51,7 @@ app.listen(3000);
 async function sendQuestion(question, answers, sender, elements) {
     let buttons;
     if (!elements) {
-        if (!(!answers)) {
+        if (!!answers) {
             buttons = new messengerBot.Buttons();
             answers.forEach(answer => {
                 buttons.add({text: answer, data: answer});
@@ -59,14 +59,15 @@ async function sendQuestion(question, answers, sender, elements) {
         }
 
         const element = {text: question};
-        if (!(!buttons)) {
+        if (!!buttons) {
             element.buttons = buttons;
         }
         const out = new messengerBot.Elements();
         out.add(element); // add a card
         await bot.send(sender.id, out);
     } else {
-        console.log(elements);
+        console.log("elements before: ")
+        console.dir(elements);
         buttons = new messengerBot.Buttons();
         for (let element of elements._elements) {
             console.log("element: " + element.text);
@@ -75,11 +76,13 @@ async function sendQuestion(question, answers, sender, elements) {
 
         const element = {text: "choose your doggo:"};
         const out = new messengerBot.Elements();
-        if (!(!buttons)) {
+        if (!!buttons) {
             element.buttons = buttons;
         }
         out.add(element);
+        console.log("elements after: ")
+        console.dir(elements);
         await bot.send(sender.id, elements);
-        await bot.send(sender.id, out)
+        // await bot.send(sender.id, out)
     }
 }
