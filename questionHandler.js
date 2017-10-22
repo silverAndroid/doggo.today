@@ -230,10 +230,13 @@ function getPotentialDoggosUI(matchingUser) {
 
     for (let {id} of potentialDoggos) {
         const user = userMap.get(id);
+        const buttons = new messengerBot.Buttons();
+        buttons.add({text: 'select', data: {id}});
         out.add({
+            image: user.answers[Pages.IMAGE].images[0],
             text: user.answers[Pages.DOG_NAME].text,
             subtext: user.answers[Pages.DESCRIPTION].text,
-            image: user.answers[Pages.IMAGE].images[0],
+            buttons
         });
         ids.push(id);
     }

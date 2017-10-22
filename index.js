@@ -98,17 +98,14 @@ async function sendQuestion(question, answers, sender, elements, location) {
             console.log("element: " + element.text);		
             buttons.add({text: element.text, data: {id}});		
         }				
-        const element = {text: "choose your doggo:"};		
-        const out = new messengerBot.Elements();		
-        if (!!buttons) {		
-            element.buttons = buttons;		
-        }		
+        const element = {text: "choose your doggo:", buttons};		
+        const out = new messengerBot.Elements();
         out.add(element);		
         console.log("elements after: ")		
         console.dir(ui  );
 
         await bot.send(sender.id, ui);
-        await bot.send(sender.id, out);
+        // await bot.send(sender.id, out);
         
     }
 }
