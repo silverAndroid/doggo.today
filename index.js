@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
 const messengerBot = require('facebook-messenger-bot');
+const axios = require('axios');
 
 const app = express();
 const questionHandler = require('./questionHandler');
@@ -33,8 +34,24 @@ bot.on('message', async (message) => {
 });
 
 bot.on('postback', async (event, {sender, text, images}, data) => {
-    const {question, answers, elements, locationUI} = await questionHandler.onMessageReceived(data, sender.id);
-    await sendQuestion(question, answers, sender, elements, locationUI);
+    if (data.hasOwnProperty('id')) {
+        const message = new messengerBot.Elements();
+        message.add({text: 'A user is interested in your dog.'});
+        bot.send(data.id, message);
+
+        const response = await axios.get(`https://graph.facebook.com/v2.10/${data.id}`, {headers: {'Authorization': `OAuth ${PAGE_ACCESS_TOKEN}`}});
+        const {first_name, last_name, profile_pic} = response.data
+        const name = `${first_name} ${last_name}`;
+
+        const user = new messengerBot.Elements();
+        const buttons = new messengerBot.Buttons();
+        buttons.add({text: 'Take me to the doggo', url: `https://www.facebook.com/search/top/?q=${name}`});
+        user.add({image: profile_pic, text: name, buttons});
+        bot.send(sender.id, user);
+    } else {
+        const {question, answers, elements, locationUI} = await questionHandler.onMessageReceived(data, sender.id);
+        await sendQuestion(question, answers, sender, elements, locationUI);
+    }
 });
 
 bot.on('invalid-postback', message => console.error(message));
@@ -79,7 +96,7 @@ async function sendQuestion(question, answers, sender, elements, location) {
             const id = ids[i];
             const element = ui._elements[i];
             console.log("element: " + element.text);		
-            buttons.add({text: element.text, data: id});		
+            buttons.add({text: element.text, data: {id}});		
         }				
         const element = {text: "choose your doggo:"};		
         const out = new messengerBot.Elements();		
