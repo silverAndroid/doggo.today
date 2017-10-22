@@ -84,7 +84,9 @@ bot.on('invalid-postback', message => console.error(message));
 app.use('/facebook', bot.router());
 
 //for testing
-app.get('/getAllDoggos', controller.findAllDoggos)
+app.get('/test', controller.test)
+app.get('/createUser', controller.createUser)
+app.get('/GetAvailableDoggos', controller.GetAvailableDoggos)
 
 if (process.env.NODE_ENV !== 'test') {
     app.use(logger('dev'));

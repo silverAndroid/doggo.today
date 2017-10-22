@@ -11,6 +11,7 @@ var userSchema = new Schema({
     },
 	facebook_id: {
         type: String,
+		unique: true,
 		required: true
     },
 	desiredDogType: {
@@ -31,14 +32,28 @@ module.exports.register = (facebook_id, callback) => {
     user.create({facebook_id}, callback)
 }
 
-module.exports.findUser = (id, callback) => {
+module.exports.getUser = (id, callback) => {
     user.findOne({id}, (err, user) => {
         callback(err, user)
     })
 }
 
-module.exports.findAllUser = (callback) => {
+module.exports.getUserByFacebookId = (facebook_id, callback) => {
+    user.findOne({facebook_id}, (err, user) => {
+        callback(err, user)
+    })
+}
+
+module.exports.getAllUser = (callback) => {
     user.find({}, (err, users) => {
         callback(err, users)
     })
+}
+
+module.exports.linkDoggo = (facebook_id, doggoId, callback) => {
+	user.findOneAndUpdate({facebook_id},  {$push: {"dogs": doggoId}}, callback)
+}
+
+module.exports.deleteDoggo = (facebook_id, doggoId, callback) => {
+	user.findOneAndUpdate({facebook_id},  {$pull: {"dogs": doggoId}}, callback)
 }
